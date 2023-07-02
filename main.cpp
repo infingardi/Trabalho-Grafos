@@ -61,6 +61,8 @@ Grafo montarGrafo(const string &nomeArquivo, bool grafoDirecionado, bool arestaP
 
 void menuDeOpcoes(Grafo &grafo) {
     string opcaoEscolhida, noEscolhido, continuar;
+    list<int> conjuntoDeVertices;
+    int numVertices;
     bool continuarRodando = true;
 
     while(continuarRodando) {
@@ -68,6 +70,9 @@ void menuDeOpcoes(Grafo &grafo) {
         cout << "1) Mostrar a vizinhança aberta de um nó" << endl;
         cout << "2) Mostrar a vizinhança fechada de um nó" << endl;
         cout << "3) Verificar se o grafo é bipartido" << endl;
+        cout << "4) Mostrar o fecho transitivo direto de um nó" << endl;
+        cout << "5) Mostrar o fecho transitivo indireto de um nó" << endl;
+        cout << "6) Mostrar o subgrafo vertice induzido de um conjunto de nós" << endl;
 
         cout << endl << "Opção: ";
 
@@ -96,6 +101,42 @@ void menuDeOpcoes(Grafo &grafo) {
                 cout << "O grafo ";
                 grafo.verificarGrafoBipartido() ? cout << "é bipartido" : cout << "não é bipartido";
 
+                break;
+            case 4:
+                cout << endl << "Nó: ";
+                cin >> noEscolhido;
+
+                cout << "Fecho transitivo direto do vértice " << noEscolhido << ": ";
+                for(int vertice : grafo.retornarFechoTransitivoDireto(stoi(noEscolhido))) {
+                    cout << vertice << " ";
+                }
+                
+                break;
+            case 5:
+                cout << endl << "Nó: ";
+                cin >> noEscolhido;
+
+                cout << "Fecho transitivo indireto do vértice " << noEscolhido << ": ";
+                for(int vertice : grafo.retornarFechoTransitivoIndireto(stoi(noEscolhido))) {
+                    cout << vertice << " ";
+                }
+                
+                break;
+            case 6:
+                cout << "Digite a quantidade de vértices do conjunto: ";
+                cin >> numVertices;
+                cout << "Digite os vértices do conjunto:" << endl;
+                for (int i = 0; i < numVertices; i++) {
+                    int vertice;
+                    cin >> vertice;
+                    conjuntoDeVertices.push_back(vertice);
+                }
+                
+                cout << "Subgrafo induzido: ";
+                for (int vertice : grafo.retornarSubgrafoVerticeInduzido(conjuntoDeVertices)) {
+                    cout << vertice << " ";
+                }
+                
                 break;
             default:
                 break;

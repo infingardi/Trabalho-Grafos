@@ -34,11 +34,15 @@ public:
     void adicionarAresta(int v1, int v2);
     void adicionarAresta(int v1, int v2, int peso);
     
-    list<int> retornarVizinhancaAberta(int v1);  // letra: H
-    list<int> retornarVizinhancaFechada(int v1); // letra: I
-    bool verificarGrafoBipartido();              // letra: L
+    list<int> retornarVizinhancaAberta(int v);                          // letra: H
+    list<int> retornarVizinhancaFechada(int v);                         // letra: I
+    bool verificarGrafoBipartido();                                     // letra: L
+    list<int> retornarFechoTransitivoDireto(int v);                     // letra: O
+    list<int> retornarFechoTransitivoIndireto(int v);                   // letra: P
+    list<int> retornarSubgrafoVerticeInduzido(list<int> vertices);      // letra: R
     
     void exibirGrafo();
+    void dfs(int v, list<int> vizinhos, vector<bool>& visitado); // busca em profundidade
 };
 
 #endif

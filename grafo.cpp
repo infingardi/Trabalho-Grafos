@@ -1,6 +1,8 @@
 #include <iostream>
 #include <set>
 #include <queue>
+#include <algorithm>
+#include <stack>
 
 #include "grafo.hpp"
 
@@ -28,14 +30,14 @@ void Grafo::adicionarAresta(int v1, int v2, int peso) {
         adj[v2].push_back(Aresta(v1, peso));
 }
 
-// Mostrar Viznhança aberta - H
-list<int> Grafo::retornarVizinhancaAberta(int v1) {
+// Retornar Viznhança aberta - H
+list<int> Grafo::retornarVizinhancaAberta(int v) {
     
     // Monta a lista de vertices da vizinhança aberta
     list<int> vizinhancaAberta;
     list<Aresta>::iterator it;
-    for (it = adj[v1].begin(); it != adj[v1].end(); ++it) {
-        if(it->destino != v1)
+    for (it = adj[v].begin(); it != adj[v].end(); ++it) {
+        if(it->destino != v)
             vizinhancaAberta.push_back(it->destino);
     }
 
@@ -51,14 +53,14 @@ list<int> Grafo::retornarVizinhancaAberta(int v1) {
     return listaOrdenada;
 }
 
-// Mostrar Viznhança fechada - I
-list<int> Grafo::retornarVizinhancaFechada(int v1) {
+// Retornar Viznhança fechada - I
+list<int> Grafo::retornarVizinhancaFechada(int v) {
 
     // Monta a lista de vertices da vizinhança fechada
     list<int> vizinhancaFechada;
     list<Aresta>::iterator it;
-    vizinhancaFechada.push_back(v1);
-    for (it = adj[v1].begin(); it != adj[v1].end(); ++it) {
+    vizinhancaFechada.push_back(v);
+    for (it = adj[v].begin(); it != adj[v].end(); ++it) {
         vizinhancaFechada.push_back(it->destino);
     }
 
@@ -116,6 +118,75 @@ bool Grafo::verificarGrafoBipartido() {
     }
 
     return true;
+}
+
+// Retornar Fecho transitivo direto - O
+list<int> Grafo::retornarFechoTransitivoDireto(int v) {
+
+    int numVertices = adj.size();
+    vector<bool> visitado(numVertices, false);
+    list<int> vizinhos = retornarVizinhancaAberta(v);
+
+    dfs(v, vizinhos, visitado);
+
+    list<int> fechoTransitivoDireto;
+    for (int i = 0; i < numVertices; ++i) {
+        if (visitado[i]) {
+            fechoTransitivoDireto.push_back(i);
+        }
+    }
+
+    return fechoTransitivoDireto;
+}
+
+void Grafo::dfs(int vertice, list<int> vizinhos, vector<bool>& visitado) {
+    visitado[vertice] = true;
+
+    // Para cada viznho é verificado se já foi visitado, se não foi ele marca como visitado e repete a recursão para o não visitado
+    for (int vizinho : vizinhos) {
+        if (!visitado[vizinho]) {
+            list<int> vizinhosDoProximoVertice = retornarVizinhancaAberta(vizinho);
+            dfs(vizinho, vizinhosDoProximoVertice, visitado);
+        }
+    }
+}
+
+// Retornar Fecho transitivo indireto - P
+list<int> Grafo::retornarFechoTransitivoIndireto(int v) {
+    list<int> fechoTransitivo;
+    vector<bool> visitado(adj.size(), false);
+
+    stack<int> pilha;
+    pilha.push(v);
+    visitado[v] = true;
+
+    while (!pilha.empty()) {
+        int verticeAtual = pilha.top();
+        pilha.pop();
+        fechoTransitivo.push_back(verticeAtual);
+
+        for (int vizinho : retornarVizinhancaAberta(verticeAtual)) {
+            if (!visitado[vizinho]) {
+                pilha.push(vizinho);
+                visitado[vizinho] = true;
+            }
+        }
+    }
+
+    return fechoTransitivo;
+}
+
+// Retorna subgrafo vértice induzido - R --- Concertar (provavelmente sera necessário retonar um grafo novo e lá usar a função exibirGrafo)
+list<int> Grafo::retornarSubgrafoVerticeInduzido(list<int> vertices) {
+    list<int> subgrafo;
+
+    for (int vertice : vertices) {
+        if (vertice >= 0 && vertice < adj.size()) {
+            subgrafo.push_back(vertice);
+        }
+    }
+
+    return subgrafo;
 }
 
 void Grafo::exibirGrafo() {
