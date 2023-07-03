@@ -1,386 +1,444 @@
 #include <iostream>
-#include <cstdlib>
-#include <cmath>
-#include  <climits>
-#include <time.h>
-#include <sstream>
+#include <set>
+#include <queue>
+#include <algorithm>
+#include <stack>
 
 #include "grafo.hpp"
-#include "aresta.hpp"
-#include "vertice.hpp"
-
-#define imprimeDestrutor false
 
 using namespace std;
 
+Grafo::Grafo(bool _direcionado) : direcionado(_direcionado) {}
 
-Grafo::Grafo(int numNos, bool dir)
-{
-    flagDir = dir;
-    setDefault(numNos);
+void Grafo::adicionarVertice(int valor) {
+    Vertice vertice(valor);
+    vertices.push_back(vertice);
+    adj.push_back(list<Aresta>());
 }
 
-/**
- * Seta opÁıes default do grafo
- * nos dados dele.
- **/
-void Grafo::setDefault(int numNos){
-    lv = new ListaVertice(NULL, NULL, numNos);
-    contadorNos = 0;
-    numeroArestas = 0;
-    numeroNos = numNos;
-    grauEntrada = 0;
-    grauSaida = 0;
-    id = 0;
-    idsAtualizados = true;
+// Adicionar Aresta sem peso
+void Grafo::adicionarAresta(int v1, int v2) {
+    adj[v1].push_back(Aresta(v2));
+    if (!direcionado)
+        adj[v2].push_back(Aresta(v1));
 }
 
-/**
- * MÈtodo respons·vel por resetar o grafo em tempo de execuÁ„o
- *
- **/
-void Grafo::resetaGrafo(){
-    limpaGrafo();
-    setDefault(0);
+// Adicionar Aresta com peso
+void Grafo::adicionarAresta(int v1, int v2, int peso) {
+    adj[v1].push_back(Aresta(v2, peso));
+    if (!direcionado)
+        adj[v2].push_back(Aresta(v1, peso));
 }
 
-/**
- * MÈtodo respons·vel por limpar os dados do grafo
- *
- **/
-void Grafo::limpaGrafo(){
-    delete lv;
-    if (imprimeDestrutor)
-        cout << "Grafo excluÌdo" << endl;
-}
-
-Grafo::~Grafo()
-{
-    limpaGrafo();
-};
-
-
-/**
- * Insere um vertice no grafo e realiza os ajustes
- * nos dados dele.
- **/
-void Grafo::insereVertice(int infoNo, int pesoNo)
-{
-    Vertice* v;
-    bool vNaoExiste = true;
-    if(lv != NULL)
-    {
-         v = lv->buscaVertice(infoNo);
-         if(v != NULL)
-            vNaoExiste = false;
+// Retornar Viznhan√ßa aberta - H
+list<int> Grafo::retornarVizinhancaAberta(int v) {
+    
+    // Monta a lista de vertices da vizinhan√ßa aberta
+    list<int> vizinhancaAberta;
+    list<Aresta>::iterator it;
+    for (it = adj[v].begin(); it != adj[v].end(); ++it) {
+        if(it->destino != v)
+            vizinhancaAberta.push_back(it->destino);
     }
-    if(vNaoExiste)
-    {
-        No* n = new No(id, infoNo, 0, 0, pesoNo);
-        lv->insereVertice(n);
-        v = lv->getUltimo();
 
-        if(v->getNo()->getGrauSaida() > grauSaida)
-            grauSaida = v->getNo()->getGrauSaida();
-        if(v->getNo()->getGrauEntrada() > grauEntrada)
-            grauEntrada = v->getNo()->getGrauEntrada();
+    // Ordena os vertices
+    set<int> viznhancaAbertaOrdenada(vizinhancaAberta.begin(), vizinhancaAberta.end());
 
-        id++;
-        contadorNos++;
-        if(contadorNos > numeroNos)
-            numeroNos = contadorNos;
+    // Devolve uma lista com os vertices ordenados
+    list<int> listaOrdenada;
+    for (int vertice : viznhancaAbertaOrdenada) {
+        listaOrdenada.push_back(vertice);
     }
+    
+    return listaOrdenada;
 }
 
+// Retornar Viznhan√ßa fechada - I
+list<int> Grafo::retornarVizinhancaFechada(int v) {
 
-/**
- * Isere uma aresta no grafo e realiza os ajustes
- * nos dados dele.
- * Caso algum dos vÈrtices n„o exista, o cria.
- **/
-void Grafo::insereAresta(int infoNo1, int pesoNo1, int infoNo2, int pesoNo2, int pesoAresta)
-{
-        Vertice* v = lv->buscaVertice(infoNo1);
-        Vertice* a = lv->buscaVertice(infoNo2);
+    // Monta a lista de vertices da vizinhan√ßa fechada
+    list<int> vizinhancaFechada;
+    list<Aresta>::iterator it;
+    vizinhancaFechada.push_back(v);
+    for (it = adj[v].begin(); it != adj[v].end(); ++it) {
+        vizinhancaFechada.push_back(it->destino);
+    }
 
-        bool existeV = true;
-        bool existeA = true;
-        bool existeAresta = false;
+    // Ordena os vertices
+    set<int> viznhancaFechadaOrdenada(vizinhancaFechada.begin(), vizinhancaFechada.end());
 
-        //verifica se os vertices a serem ligados por uma aresta existem. se n„o, os cria
-        if(v == NULL)
-        {
-            existeV = false;
-            insereVertice(infoNo1, pesoNo1);
-            v = lv->getUltimo();
-        }
-        if(a == NULL)
-        {
-            existeA = false;
-            insereVertice(infoNo2, pesoNo2);
-            a = lv->getUltimo();
-        }
+    // Devolve uma lista com os vertices ordenados
+    list<int> listaOrdenada;
+    for (int vertice : viznhancaFechadaOrdenada) {
+        listaOrdenada.push_back(vertice);
+    }
+    
+    return listaOrdenada;
+}
 
-        if(existeV && existeA) //se os dois vertices foram encontrados na busca, pode haver aresta entre eles
-        {
-            Aresta* arestasV = v->getArestas()->getRaiz();
-            while(arestasV != NULL)
-            {
-                if(infoNo2 == arestasV->getVertice()->getNo()->getInfo())
-                {
-                    existeAresta = true; //caso a aresta ja exista
-                    break;
+// Verificar se o grafo √© bipartido - L
+bool Grafo::verificarGrafoBipartido() {
+    
+    enum Cor {
+        BRANCO,
+        VERMELHO,
+        AZUL
+    };
+
+    // Armazena a cor de cada v√©rtice
+    int numVertices = adj.size();
+    vector<Cor> cores(numVertices, BRANCO);
+
+    for (int i = 1; i < numVertices; ++i) {
+        // Colore o vertice caso ele seja branco
+        if (cores[i] == BRANCO) {
+            cores[i] = VERMELHO;
+
+            list<int> vizinhos = retornarVizinhancaAberta(i);
+
+            for(int vertice : vizinhos) {
+                if(cores[vertice] == BRANCO || cores[vertice] == AZUL) {
+                    cores[vertice] = AZUL;
+                } else {
+                    return false;
                 }
-                else
-                {
-                    arestasV = arestasV->getProx();
+            }
+        } else {
+            list<int> vizinhos = retornarVizinhancaAberta(i);
+            Cor corQueNaoPodeSer = cores[i];
+            
+            for(int vertice : vizinhos) {
+                if(cores[vertice] == corQueNaoPodeSer) {
+                    return false;
+                } else if(cores[vertice] == BRANCO) {
+                    cores[vertice] = corQueNaoPodeSer == VERMELHO ? AZUL : VERMELHO;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+// Retornar Fecho transitivo direto - O
+list<int> Grafo::retornarFechoTransitivoDireto(int v) {
+
+    int numVertices = adj.size();
+    vector<bool> visitado(numVertices, false);
+    list<int> vizinhos = retornarVizinhancaAberta(v);
+
+    dfs(v, vizinhos, visitado);
+
+    list<int> fechoTransitivoDireto;
+    for (int i = 0; i < numVertices; ++i) {
+        if (visitado[i]) {
+            fechoTransitivoDireto.push_back(i);
+        }
+    }
+
+    return fechoTransitivoDireto;
+}
+
+void Grafo::dfs(int vertice, list<int> vizinhos, vector<bool>& visitado) {
+    visitado[vertice] = true;
+
+    // Para cada viznho √© verificado se j√° foi visitado, se n√£o foi ele marca como visitado e repete a recurs√£o para o n√£o visitado
+    for (int vizinho : vizinhos) {
+        if (!visitado[vizinho]) {
+            list<int> vizinhosDoProximoVertice = retornarVizinhancaAberta(vizinho);
+            dfs(vizinho, vizinhosDoProximoVertice, visitado);
+        }
+    }
+}
+
+// Retornar Fecho transitivo indireto - P
+list<int> Grafo::retornarFechoTransitivoIndireto(int v) {
+    list<int> fechoTransitivo;
+    vector<bool> visitado(adj.size(), false);
+
+    stack<int> pilha;
+    pilha.push(v);
+    visitado[v] = true;
+
+    while (!pilha.empty()) {
+        int verticeAtual = pilha.top();
+        pilha.pop();
+        fechoTransitivo.push_back(verticeAtual);
+
+        for (int vizinho : retornarVizinhancaAberta(verticeAtual)) {
+            if (!visitado[vizinho]) {
+                pilha.push(vizinho);
+                visitado[vizinho] = true;
+            }
+        }
+    }
+
+    return fechoTransitivo;
+}
+
+// Retorna subgrafo v√©rtice induzido - R --- Concertar (provavelmente sera necess√°rio retonar um grafo novo e l√° usar a fun√ß√£o exibirGrafo)
+list<int> Grafo::retornarSubgrafoVerticeInduzido(list<int> vertices) {
+    list<int> subgrafo;
+
+    for (int vertice : vertices) {
+        if (vertice >= 0 && vertice < adj.size()) {
+            subgrafo.push_back(vertice);
+        }
+    }
+
+    return subgrafo;
+}
+
+// Encontrar clique de peso Maximo - Algoritmo guloso
+list<int> Grafo::retornarCliqueDePesoMaximoGuloso() {
+    list<int> cliquePesoMaximo;
+    int pesoMaximo = 0;
+
+    for (int v = 1; v < vertices.size(); ++v) {
+        list<int> cliqueAtual;
+        cliqueAtual.push_back(v);
+
+        for (int vizinho : retornarVizinhancaAberta(v)) {
+            if (find(cliqueAtual.begin(), cliqueAtual.end(), vizinho) == cliqueAtual.end()) {
+                cliqueAtual.push_back(vizinho);
+            }
+        }
+
+        int pesoCliqueAtual = 0;
+        for (int v1 : cliqueAtual) {
+            for (Aresta aresta : adj[v1]) {
+                if (find(cliqueAtual.begin(), cliqueAtual.end(), aresta.destino) != cliqueAtual.end()) {
+                    pesoCliqueAtual += aresta.peso;
                 }
             }
         }
 
-        if(!existeAresta)
-        {
-            lv->insereAresta(v, a, pesoAresta, flagDir);
-
-            if(v->getNo()->getGrauSaida() > grauSaida)
-                grauSaida = v->getNo()->getGrauSaida();
-            if(v->getNo()->getGrauEntrada() > grauEntrada)
-                grauEntrada = v->getNo()->getGrauEntrada();
-
-            if(a->getNo()->getGrauSaida() > grauSaida)
-                grauSaida = a->getNo()->getGrauSaida();
-            if(a->getNo()->getGrauEntrada() > grauEntrada)
-                grauEntrada = a->getNo()->getGrauEntrada();
-
-            numeroArestas++;
-        }
-
-
-}
-
-
-/**
- * Imprime o grafo.
- **/
-void Grafo::imprimeGrafo()
-{
-    cout << endl << "Grafo: " << endl;
-    lv->imprime();
-}
-
-
-/**
- *
- * FunÁ„o auxiliar que converte n˙meros inteiros para string.
- * @param n - n˙mero inteiro a ser transformado em string
- **/
-string intToString(int n)
-{
-    stringstream ss;
-    ss << n;
-    return ss.str();
-}
-
-/**
- * Realiza a busca em profundidade a partir de um no passado por parametro
- * @param infoNo - info do no inicial para a busca
- **/
-void Grafo::buscaEmProfundidade(int infoNo)
-{
-    bool* vetColoracao = new bool[numeroNos]; //Vetor auxiliar para marcar os vertices percorridos
-    Vertice* v = lv->getRaiz();
-    IO* saida = new IO();
-    string resultado = "Inicio";
-    char nomeArquivo[10] = "BuscaProf";
-    saida->saidaBusca(nomeArquivo,resultado);
-    if(!idsAtualizados)
-    {
-        for(int i=0; v!=NULL && i<numeroNos;i++)
-        {
-            v->getNo()->setId(i);  //Atualiza ids
-            vetColoracao[i]=0;
-            v = v->getProx();
-        }
-        cout << endl << "Ids atualizados!" << endl;
-        idsAtualizados = true;
-    }
-    else
-    {
-        for(int i=0; i<numeroNos;i++)
-        {
-            vetColoracao[i]=0;
+        if (pesoCliqueAtual > pesoMaximo) {
+            pesoMaximo = pesoCliqueAtual;
+            cliquePesoMaximo = cliqueAtual;
         }
     }
-    int nivel=0;
-    Vertice* pai = NULL;
-    v = lv->buscaVertice(infoNo);
-    resultado = "Busca em profundidade a partir do No: " +  intToString(infoNo);
-    cout << resultado << endl;
-    saida->saidaBusca(nomeArquivo,resultado);
-    if(v!=NULL){
-        buscaEmProfundidadeF(v, vetColoracao, nivel, pai,saida,nomeArquivo);
-    }
-    else{
-        resultado = "No nao encontrado!";
-        cout << resultado << endl;
-        saida->saidaBusca(nomeArquivo,resultado);
-    }
 
-    resultado = "Fim";
-    saida->saidaBusca(nomeArquivo,resultado);
-    delete [] vetColoracao;
-    delete saida;
+    return cliquePesoMaximo;
 }
 
-/**
- * Parte recursiva da busca em profundidade
- * @param v - Vertice que esta sendo visitado no momento
- * @param vetColoracao - Vetor responsavel pelo armazenamento das cores
- * @param nivel - Nivel a ser impresso da arvore
- * @param pai - Pai do vertice que esta sendo visitado no momento
- * @param saida - objeto respons·vel pela escrita em arquivo
- * @param nomeArquivo - nome do arquivo de saÌda
- **/
-void Grafo::buscaEmProfundidadeF(Vertice* v, bool* vetColoracao, int nivel, Vertice* pai, IO* saida, char* nomeArquivo)
-{
-    string resultado;
-    if(v == NULL)
-        return;
-    if(nivel == 0)
-        resultado = "No: " + intToString(v->getNo()->getInfo()) + " Pai: NULL Nivel: " + intToString(nivel);
-    else
-        resultado = "No: " + intToString(v->getNo()->getInfo()) + " Pai: " + intToString(pai->getNo()->getInfo()) + " Nivel: " + intToString(nivel);
+// Encontrar clique de peso Maximo - Algoritmo guloso randomizado adaptativo
 
-    cout << resultado << endl;
-    saida->saidaBusca(nomeArquivo,resultado);
-
-    vetColoracao[v->getNo()->getId()] = 1; //marca NÛ atual como percorrido
-    Aresta* a1 = v->getArestas()->getRaiz();
-    while(a1 != NULL)
-    {
-        if(vetColoracao[a1->getVertice()->getNo()->getId()] == 0) //verifica se o vÈrtice da lista de arestas j· foi percorrido
-            buscaEmProfundidadeF(a1->getVertice(), vetColoracao, nivel+1, v, saida, nomeArquivo);
-        a1 = a1->getProx();
-    }
+int Grafo::gerarNumeroAleatorio(int min, int max) {
+    return min + rand() % (max - min + 1);
 }
 
-/**
- * Realiza a busca em largura a partir de um no passado por parametro
- * @param infoNo - info do no inicial para a busca
- **/
-void Grafo::buscaEmLargura(int infoNo)
-{
-    int* vetColoracao = new int[numeroNos];    //Vetor para armazenar a "fila" dos que ser„o percorridos
-    bool* vetColoracaoB = new bool[numeroNos]; //Vetor auxiliar para marcar os vÈrtices percorridos
-    bool* vetColoracaoC = new bool[numeroNos]; //Vetor auxiliar para marcar os vÈrtices impressos
-    Vertice* v = lv->getRaiz();
-    IO* saida = new IO();
-    string resultado = "Inicio";
-    char nomeArquivo[13] = "BuscaLargura";
-    saida->saidaBusca(nomeArquivo,resultado);
-    if(!idsAtualizados)
-    {
-        for(int i=0; v!=NULL && i<numeroNos;i++)
-        {
-            v->getNo()->setId(i);       //Atualiza ids
-            vetColoracaoB[i] = 0;
-            vetColoracaoC[i] = 0;
-            v = v->getProx();
-        }
-        cout << endl << "Ids atualizados!" << endl;
-        idsAtualizados = true;
-    }
-    else
-    {
-        for(int i=0; i<numeroNos;i++)
-        {
-            vetColoracaoB[i] = 0;
-            vetColoracaoC[i] = 0;
+bool Grafo::existeAresta(int v1, int v2) {
+
+    list<Aresta>::iterator it;
+    for (it = adj[v1].begin(); it != adj[v1].end(); ++it) {
+        if(it->destino == v2) {
+            return true;
         }
     }
-    v = lv->buscaVertice(infoNo);
 
-    resultado = "Busca em largura a partir do No: " + intToString(infoNo);
-    cout<< resultado << endl;
-    saida->saidaBusca(nomeArquivo,resultado);
-
-    if(v!=NULL){
-        buscaEmLarguraF(v, vetColoracao, vetColoracaoB, vetColoracaoC, saida, nomeArquivo);
-    }
-    else{
-        resultado = "No nao encontrado!";
-        cout<< resultado << endl;
-        saida->saidaBusca(nomeArquivo,resultado);
-    }
-    resultado = "Fim";
-    saida->saidaBusca(nomeArquivo,resultado);
-    delete saida;
-    delete [] vetColoracaoB;
-    delete [] vetColoracaoC;
-    delete [] vetColoracao;
+    return false;
 }
 
-/**
- * Realiza de fato a busca em profundidade a partir de um no passado por parametro
- * @param pai - Pai do no que esta sendo visitado no momento
- * @param vetColoracao - Vetor responsavel pelo armazenamento da fila de nos nao visitados
- * @param vetColoracaoB - Vetor responsavel por marcar os nos ja percorridos
- * @param vetColoracaoC - Vetor responsavel por marcar os nos ja impressos
- * @param saida - objeto respons·vel pela escrita em arquivo
- * @param nomeArquivo - nome do arquivo de saÌda
- **/
-void Grafo::buscaEmLarguraF(Vertice* pai, int* vetColoracao, bool* vetColoracaoB, bool* vetColoracaoC, IO* saida, char* nomeArquivo)
-{
-    int nivel=0; //respons·vel por imprimir o nivel do NÛ
-    int posA=0;  //Ìndice responsavÈl por inserir os NÛs na fila
-    int posB=0;  //Ìndice responsavel por marcar os NÛs que j· foram impressos
-    int ll=0;    //variavel auxiliar para controlar o valor do nivel
-    string resultado;
-    resultado = "No: " + intToString(pai->getNo()->getInfo()) + " Pai: NULL Nivel: " + intToString(nivel);
-    cout << resultado << endl;
-    saida->saidaBusca(nomeArquivo,resultado);
+int Grafo::retornaPesoDaAresta(int v1, int v2) {
 
-    vetColoracao[posA] = pai->getNo()->getInfo(); //adiciona NÛ atual no vetor de percorridos
-    vetColoracaoB[pai->getNo()->getId()] = 1;     //marca NÛ atualcomo j· percorrido
-    vetColoracaoC[pai->getNo()->getId()] = 1;     //marca NÛ atual como j· impresso
-    posA++;
-    nivel++;
+    list<Aresta>::iterator it;
+    for (it = adj[v1].begin(); it != adj[v1].end(); ++it) {
+        if(it->destino == v2) {
+            return it->peso;
+        }
+    }
 
-    Aresta* a1 = pai->getArestas()->getRaiz();    //pega a lista de adjacentes do pai
-    while(1)
-    {
-        while(a1 != NULL)
-        {
-            if(vetColoracaoC[a1->getVertice()->getNo()->getId()] == 0)//sÛ È impresso e adicionado na lista, caso ainda n„o tenha sido impresso
-            {
-                resultado = "No: " + intToString(a1->getVertice()->getNo()->getInfo()) + " Pai: " + intToString(pai->getNo()->getInfo()) + " Nivel: " + intToString(nivel);
-                cout << resultado << endl;
-                saida->saidaBusca(nomeArquivo,resultado);
-                vetColoracao[posA] = a1->getVertice()->getNo()->getInfo();  //adiciona filho na lista
-                posA++;
+    return -1;
+}
+
+bool Grafo::formaClique(const list<int>& verticesDaClique) {
+    for (int v1 : verticesDaClique) {
+        for (int v2 : verticesDaClique) {
+            if (v1 != v2 && !existeAresta(v1, v2)) {
+                return false;
             }
-            vetColoracaoC[a1->getVertice()->getNo()->getId()] = 1; //marca como j· impresso
+        }
+    }
+    return true;
+}
 
-            a1 = a1->getProx();
+int Grafo::calcularPesoClique(const list<int>& verticesDaClique) {
+    int pesoTotal = 0;
+    for (int v1 : verticesDaClique) {
+        for (int v2 : verticesDaClique) {
+            if (v1 != v2 && existeAresta(v1, v2)) {
+                pesoTotal += retornaPesoDaAresta(v1, v2);
+            }
+        }
+    }
+    return pesoTotal;
+}
+
+
+// Encontrar clique de peso Maximo - Algoritmo guloso randomizado adaptativo e reativo
+int Grafo::obterSomaDePesosDasArestasDeUmVerticeDaClique(const list<int> &verticesDaClique, int v) {
+    int pesoTotal = 0;
+
+    for(int vertice : verticesDaClique) {
+        if(vertice != v) {
+            pesoTotal += retornaPesoDaAresta(vertice, v);
+        }
+    }
+
+    return pesoTotal;
+}
+
+
+list<int> Grafo::encontrarCliquePesoMaximoRandomizadoAdaptativoReativo(int numIteracoes, int tamanhoMaximo) {
+    list<int> melhorClique;
+    int melhorPeso = 0;
+
+    srand(time(nullptr));
+
+    vector<double> probabilidades(vertices.size(), 1.0);
+
+    for (int iteracao = 0; iteracao < numIteracoes; ++iteracao) {
+        list<int> cliqueAtual;
+        int pesoAtual = 0;
+
+        vector<int> verticesDisponiveis(vertices.size());
+        for (int i = 0; i < vertices.size(); ++i) {
+            verticesDisponiveis[i] = i;
         }
 
-        if(posB == ll)  //controla o nivel de cada no
-        {
-            ll = posA-1;
-            nivel++;
+        random_shuffle(verticesDisponiveis.begin(), verticesDisponiveis.end());
+
+        // Selecionar os primeiros 'tamanhoMaximo' v√©rtices como a clique inicial
+        for (int i = 0; i < tamanhoMaximo; ++i) {
+            cliqueAtual.push_back(verticesDisponiveis[i]);
+            pesoAtual += obterSomaDePesosDasArestasDeUmVerticeDaClique(cliqueAtual, verticesDisponiveis[i]); // considerando o peso das arestas
         }
-        posB++;
 
-        if(posA == posB)
-            break;     //se a posiÁao vaga do vetor da fila for igual a de quem nao foi percorrido
+        int iteracoesSemMelhora = 0;
+        bool melhorou = false;
 
-        pai = lv->buscaVertice(vetColoracao[posB]);  //proximo na fila
-        vetColoracaoB[pai->getNo()->getId()] = 1;
-        a1 = pai->getArestas()->getRaiz();
+        while (iteracoesSemMelhora < 100) { // N√∫mero m√°ximo de itera√ß√µes sem melhora
+            melhorou = false;
 
-        while(a1!=NULL && vetColoracaoB[a1->getVertice()->getNo()->getId()] == 1)
-        {
-            a1 = a1->getProx();     //para n„o voltar em vertices ja percorridos
+            for (int i = tamanhoMaximo; i < vertices.size(); ++i) {
+                if (cliqueAtual.size() >= vertices.size()) {
+                    break; // J√° formou a clique m√°xima poss√≠vel
+                }
+
+                int verticeAtual = verticesDisponiveis[i];
+                double probabilidade = rand() / (double)RAND_MAX;
+
+                if (probabilidade < probabilidades[verticeAtual]) {
+                    // Verificar se a inclus√£o do v√©rtice atual forma uma clique v√°lida
+                    bool formaClique = true;
+                    for (int v : cliqueAtual) {
+                        if (!existeAresta(verticeAtual, v)) {
+                            formaClique = false;
+                            break;
+                        }
+                    }
+
+                    if (formaClique) {
+                        int novoPeso = pesoAtual + obterSomaDePesosDasArestasDeUmVerticeDaClique(cliqueAtual, verticeAtual); // considerando o peso das arestas
+                        if (novoPeso > pesoAtual) {
+                            cliqueAtual.push_back(verticeAtual);
+                            pesoAtual = novoPeso;
+                            melhorou = true;
+                            iteracoesSemMelhora = 0;
+                        }
+                    }
+                }
+            }
+
+            if (!melhorou) {
+                iteracoesSemMelhora++;
+            }
         }
+
+        if (pesoAtual > melhorPeso) {
+            melhorClique = cliqueAtual;
+            melhorPeso = pesoAtual;
+        }
+    }
+
+    return melhorClique;
+}
+
+list<int> Grafo::encontrarCliquePesoMaximoRandomizadoAdaptativo(int numIteracoes, int tamanhoMaximo) {
+    int numVertices = adj.size();
+    list<int> melhorClique;
+    int melhorPeso = 0;
+
+    srand(time(nullptr));
+
+    for (int i = 0; i < numIteracoes; ++i) {
+        list<int> cliqueAtual;
+        int pesoAtual = 0;
+        vector<int> verticesDisponiveis(numVertices);
+        for (int j = 0; j < numVertices; ++j) {
+            verticesDisponiveis[j] = j;
+        }
+
+        random_shuffle(verticesDisponiveis.begin(), verticesDisponiveis.end());
+
+        for (int j = 0; j < tamanhoMaximo && j < numVertices; ++j) {
+            cliqueAtual.push_back(verticesDisponiveis[j]);
+        }
+
+        int iteracoesSemMelhora = 0;
+
+        while (iteracoesSemMelhora < 100) {
+            bool melhorou = false;
+
+            for (int j = 0; j < numVertices; ++j) {
+                if (find(cliqueAtual.begin(), cliqueAtual.end(), j) == cliqueAtual.end()) {
+                    list<int> novaClique = cliqueAtual;
+                    novaClique.push_back(j);
+
+                    if (formaClique(novaClique)) {
+                        int novoPeso = calcularPesoClique(novaClique);
+
+                        if (novoPeso > pesoAtual) {
+                            cliqueAtual = novaClique;
+                            pesoAtual = novoPeso;
+                            melhorou = true;
+                            iteracoesSemMelhora = 0;
+                        }
+                    }
+                }
+            }
+
+            if (!melhorou) {
+                ++iteracoesSemMelhora;
+            }
+        }
+
+        if (pesoAtual > melhorPeso) {
+            melhorClique = cliqueAtual;
+            melhorPeso = pesoAtual;
+        }
+    }
+
+    return melhorClique;
+}
+
+
+// ================================= Fim randomizado guloso Adaptivo randomizado ==================================
+
+
+void Grafo::exibirGrafo() {
+    for (int i = 1; i < vertices.size(); ++i) {
+        cout << "V√©rtice " << i << " (valor: " << vertices[i].valor << "): ";
+        if (!adj[i].empty()) {
+            list<Aresta>::iterator it;
+            for (it = adj[i].begin(); it != adj[i].end(); ++it) {
+                cout << "(" << it->destino;
+                if (it->peso != 0)
+                    cout << ", " << it->peso;
+                cout << ") ";
+            }
+        }
+        cout << endl;
     }
 }

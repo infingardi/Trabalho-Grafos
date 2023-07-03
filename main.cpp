@@ -1,110 +1,202 @@
 #include <iostream>
+#include <fstream>
 #include <string>
-#include <cstdlib>
-#include <stdio.h>
+#include <sstream>
+
 #include "grafo.hpp"
-#include "aresta.hpp"
-#include "vertice.hpp"
-#include "io.hpp"
 
 using namespace std;
 
-/**
- *
- * Função responsável pela interface com o usuário pela ler o nome do arquivo de entrada
- *
- **/
-string leNomeArquivoEntrada(){
-    string escolha;
-    cout<< "Deseja digitar o nome do arquivo de entrada ou utilizar o primeiro arquivo válido?" << endl << "As instancias deverao estar no diretório 'Entradas' "<<endl<<endl;
-    cout<< "1) Informar nome do arquivo txt 2) Usar primeiro arquivo válido" << endl <<"Escolha:";
-    string nomeArquivo;
-    while (true){
-        cin >> escolha;
-        if (escolha=="1"){
-            cout << "Nome do arquivo (sem extensão):";
-            cin >>nomeArquivo;
-            nomeArquivo += ".txt";
-            return nomeArquivo;
-        } else if (escolha=="2"){
-            return "";
-        } else{
-            cout << "Opção inválida" << endl << "Digite sua escolha novamente:";
-        }
+int pegarNumeroDeVertices(const string& nomeArquivo) {
+    ifstream arquivo(nomeArquivo);
+
+    if (!arquivo.is_open()) {
+        cerr << "Erro ao abrir o arquivo: " << nomeArquivo << endl;
+        return 0;
     }
+
+    string primeiraLinha;
+    getline(arquivo, primeiraLinha);
+
+    arquivo.close();
+
+    return stoi(primeiraLinha);
 }
 
-/**
- *
- * Função responsável por inserir o menu em tela e realizar os tratamentos e chamadas de funções
- * de acordo com a opção escolhida
- *
- **/
-void incluirMenu(Grafo *g, IO *x){
-    string strEscolha, nomeArquivo, retornar, strEscolhaAux;
-    int escolha;
-    bool opInvalida =false;
-    cout << endl << endl;
-    while(true){
-        system("clear");
-        if (opInvalida)
-            cout << "Opção inválida" <<endl << "Digite novamente:" <<endl;
-        else
-            cout << "Digite a opção desejada:" <<endl;
-        opInvalida = false;
-        cout << "\t 1) Ler um novo grafo" <<endl;
-        cout << "\t 2) Imprimir grafo" <<endl;
-        cout << "\t 3) Imprimir número de nós e arestas" <<endl;
-        cout << "\t 0) Sair" <<endl;
-        cout << endl << "Opção: ";
-        cin >> strEscolha;
-        escolha = atoi(strEscolha.c_str());
-        system("clear");
-        switch(escolha){
-            case 0:
-                cout<< "Saindo do programa;" <<endl;
-                return;
+void lerArquivoEadicionarArestas(const string& nomeArquivo, Grafo &grafo) {
+    ifstream arquivo(nomeArquivo);
+    if (!arquivo.is_open()) {
+        cerr << "Erro ao abrir o arquivo: " << nomeArquivo << endl;
+        return;
+    }
+
+    string linha;
+    getline(arquivo, linha);  // Pula a primeira linha
+
+    while (getline(arquivo, linha)) {
+        istringstream iss(linha);
+        int v1, v2, peso;
+        if (iss >> v1 >> v2 >> peso) {
+            grafo.adicionarAresta(v1, v2, peso);
+        } else {
+            cerr << "Erro ao ler a linha: " << linha << endl;
+        }
+    }
+
+    arquivo.close();
+}
+
+Grafo montarGrafo(const string &nomeArquivo, bool grafoDirecionado, bool arestaPonderada, bool verticePonderado) {
+    int numeroDeVertices = pegarNumeroDeVertices(nomeArquivo);
+    Grafo grafo(grafoDirecionado);
+
+    for(int i = 0; i <= numeroDeVertices; i++) {
+        grafo.adicionarVertice(0);
+    }
+
+    lerArquivoEadicionarArestas(nomeArquivo, grafo);
+
+    return grafo;
+}
+
+void menuDeOpcoes(Grafo &grafo) {
+    string opcaoEscolhida, noEscolhido, continuar;
+    list<int> conjuntoDeVertices;
+    int numVertices;
+    bool continuarRodando = true;
+
+    while(continuarRodando) {
+        cout << "Digite o valor da opÃ§Ã£o que deseja executar" << endl;
+        cout << "1) Mostrar a vizinhanÃ§a aberta de um nÃ³" << endl;
+        cout << "2) Mostrar a vizinhanÃ§a fechada de um nÃ³" << endl;
+        cout << "3) Verificar se o grafo Ã© bipartido" << endl;
+        cout << "4) Mostrar o fecho transitivo direto de um nÃ³" << endl;
+        cout << "5) Mostrar o fecho transitivo indireto de um nÃ³" << endl;
+        cout << "6) Mostrar o subgrafo vertice induzido de um conjunto de nÃ³s" << endl;
+        cout << "7) Mostrar o conjunto de vÃ©rtices formados pela clique de peso maximo (Guloso)" << endl;
+        cout << "8) Mostrar o conjunto de vÃ©rtices formados pela clique de peso maximo (Guloso randomizado adaptativo)" << endl;
+        cout << "9) Mostrar o conjunto de vÃ©rtices formados pela clique de peso maximo (Guloso randomizado adaptativo reativo)" << endl;
+
+        cout << endl << "OpÃ§Ã£o: ";
+
+        cin >> opcaoEscolhida;
+
+        switch(stoi(opcaoEscolhida)) {
             case 1:
-                g->resetaGrafo();
-                nomeArquivo = leNomeArquivoEntrada();
-                x->setNomeEntrada(nomeArquivo);
-                x->leGrafo(g);
+                cout << endl << "NÃ³: ";
+                cin >> noEscolhido;
+                cout << "VizinhanÃ§a aberta do vÃ©rtice " << noEscolhido << ": ";
+                for(int vertice : grafo.retornarVizinhancaAberta(stoi(noEscolhido))) {
+                    cout << vertice << " ";
+                }
                 break;
             case 2:
-                g->imprimeGrafo();
+                cout << endl << "NÃ³: ";
+                cin >> noEscolhido;
+
+                cout << "VizinhanÃ§a fechada do vÃ©rtice " << noEscolhido << ": ";
+                for(int vertice : grafo.retornarVizinhancaFechada(stoi(noEscolhido))) {
+                    cout << vertice << " ";
+                }
+                
                 break;
             case 3:
-                cout<< "Número de nós: " << g->getNumNos() << endl;
-                cout<< "Número de arestas: " << g->getNumArestas() << endl;
+                cout << "O grafo ";
+                grafo.verificarGrafoBipartido() ? cout << "Ã© bipartido" : cout << "nÃ£o Ã© bipartido";
+
+                break;
+            case 4:
+                cout << endl << "NÃ³: ";
+                cin >> noEscolhido;
+
+                cout << "Fecho transitivo direto do vÃ©rtice " << noEscolhido << ": ";
+                for(int vertice : grafo.retornarFechoTransitivoDireto(stoi(noEscolhido))) {
+                    cout << vertice << " ";
+                }
+                
+                break;
+            case 5:
+                cout << endl << "NÃ³: ";
+                cin >> noEscolhido;
+
+                cout << "Fecho transitivo indireto do vÃ©rtice " << noEscolhido << ": ";
+                for(int vertice : grafo.retornarFechoTransitivoIndireto(stoi(noEscolhido))) {
+                    cout << vertice << " ";
+                }
+                
+                break;
+            case 6:
+                cout << "Digite a quantidade de vÃ©rtices do conjunto: ";
+                cin >> numVertices;
+                cout << "Digite os vÃ©rtices do conjunto:" << endl;
+                for (int i = 0; i < numVertices; i++) {
+                    int vertice;
+                    cin >> vertice;
+                    conjuntoDeVertices.push_back(vertice);
+                }
+                
+                cout << "Subgrafo induzido: ";
+                for (int vertice : grafo.retornarSubgrafoVerticeInduzido(conjuntoDeVertices)) {
+                    cout << vertice << " ";
+                }
+                
+                break;
+
+            case 7:
+                cout << "A clique de peso maxima encontrado pelo algoritmo guloso foi: ";
+                for (int vertice : grafo.retornarCliqueDePesoMaximoGuloso()) {
+                    cout << vertice << " ";
+                }
+                
+                break;
+            case 8:
+                cout << "A clique de peso maxima encontrado pelo algoritmo guloso randomizado adaptativo foi: ";
+
+                for (int vertice : grafo.encontrarCliquePesoMaximoRandomizadoAdaptativo(100, 1)) {
+                    cout << vertice << " ";
+                }
+                
+                break;
+            case 9:
+                cout << "A clique de peso maxima encontrado pelo algoritmo guloso randomizado adaptativo foi: ";
+
+                for (int vertice : grafo.encontrarCliquePesoMaximoRandomizadoAdaptativoReativo(100, 1)) {
+                    cout << vertice << " ";
+                }
+                
                 break;
             default:
-                opInvalida = true;
-
+                break;
         }
 
-        cout << endl<< endl<<"Pressione ENTER para voltar ao menu."<<endl;
+        cout << endl << endl;
+        cout << "=========================================================================================";
+        cout << endl << endl;
 
-        if (!opInvalida)
-            system("read retornar");
+        cout << "Se deseja continuar utilizando o menu digite 's'" << endl;
+        cin >> continuar;
 
+        continuarRodando = continuar == "s" ? true : false;
+
+        cout << endl << endl;
+        cout << "=========================================================================================";
+        cout << endl << endl;
     }
 }
 
+int main(int argc, char **argv) {
 
-int main()
-{
-    string nomeArquivo, direcionado;
-    bool flagDir=false;
-    nomeArquivo = leNomeArquivoEntrada();
-    system("clear");
+    string arquivoEntrada = argv[1];
+    string arquivoDestino = argv[2];
 
-    Grafo* g = new Grafo(1, flagDir);
-    IO *x = new IO(nomeArquivo);
-    x->leGrafo(g);
-    incluirMenu(g,x);
+    bool grafoDirecionado = stoi(argv[3]) == 1 ? true : false;
+    bool arestaPonderada = stoi(argv[4]) == 1 ? true : false;
+    bool verticePonderado = stoi(argv[5]) == 1 ? true : false;
 
+    Grafo grafo = montarGrafo(arquivoEntrada, grafoDirecionado, arestaPonderada, verticePonderado);
 
-    delete g;
-    delete x;
+    menuDeOpcoes(grafo);
+    
     return 0;
 }
+

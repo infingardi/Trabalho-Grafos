@@ -1,51 +1,62 @@
-#ifndef GRAFO_HPP_INCLUDED
-#define GRAFO_HPP_INCLUDED
+#ifndef GRAFO_HPP
+#define GRAFO_HPP
 
-#include "aresta.hpp"
-#include "vertice.hpp"
-#include "io.hpp"
+#include <iostream>
+#include <list>
+#include <vector>
+#include <utility>
 
+using namespace std;
 
-class Grafo{
-private:
-    ListaVertice* lv;
-    int numeroNos;
-    int contadorNos;
-    int numeroArestas;
-    int grauEntrada;
-    int grauSaida;
-    bool flagDir;
-    int id;
-    bool idsAtualizados;
+struct Vertice {
+    int valor;
 
-    void buscaEmProfundidadeF(Vertice* v, bool* vetColoracao, int nivel, Vertice* pai, IO* saida, char* nomeArquivo);
-    void buscaEmLarguraF(Vertice* v, int* vetColoracao, bool* vetColoracaoB, bool* vetColoracaoC, IO* saida, char* nomeArquivo);
-    void setDefault(int numNos);
-    void limpaGrafo();
-
-public:
-    Grafo(int numNos, bool dir);
-    ~Grafo();
-
-    void resetaGrafo();
-    int getId(){return id;};
-    int getNumNos(){return numeroNos;};
-    int getNumArestas(){return numeroArestas;};
-    int getGrauEntrada(){return grauEntrada;};
-    int getGrauSaida(){return grauSaida;};
-    bool isDir(){return flagDir;};
-    void setNumNos(int n){numeroNos = n;};
-    void setNumArestas(int n){numeroArestas = n;};
-    void setGrauEntrada(int n){grauEntrada = n;};
-    void setGrauSaida(int n){grauSaida = n;};
-    void setFlagDir(bool n){flagDir = n;};
-
-    void insereVertice(int infoNo, int pesoNo);
-    void insereAresta(int infoNo1, int pesoNo1, int infoNo2, int pesoNo2, int pesoAresta);
-    void imprimeGrafo();
-    void buscaEmProfundidade(int infoNo);
-    void buscaEmLargura(int infoNo);
-
+    Vertice() : valor(0) {} // Caso não passe parêmetro o valor do vértice é 0
+    Vertice(int _valor) : valor(_valor) {} // Caso com vértice ponderado
 };
 
-#endif // GRAFO_HPP_INCLUDED
+struct Aresta {
+    int destino;
+    int peso;
+
+    Aresta(int _destino) : destino(_destino), peso(0) {} // Caso não passe parêmetro o valor da aresta é 0
+    Aresta(int _destino, int _peso) : destino(_destino), peso(_peso) {} // Caso com aresta ponderada
+};
+
+class Grafo {
+    bool direcionado;
+    vector<Vertice> vertices;
+    vector<list<Aresta>> adj;
+
+public:
+    Grafo(bool _direcionado);
+    void adicionarVertice(int valor);
+    void adicionarAresta(int v1, int v2);
+    void adicionarAresta(int v1, int v2, int peso);
+    
+    list<int> retornarVizinhancaAberta(int v);                          // letra: H
+    list<int> retornarVizinhancaFechada(int v);                         // letra: I
+    bool verificarGrafoBipartido();                                     // letra: L
+    list<int> retornarFechoTransitivoDireto(int v);                     // letra: O
+    list<int> retornarFechoTransitivoIndireto(int v);                   // letra: P
+    list<int> retornarSubgrafoVerticeInduzido(list<int> vertices);      // letra: R (Arrumar)
+
+
+    list<int> retornarCliqueDePesoMaximoGuloso();      // Algoritmo guloso
+    
+    void exibirGrafo();
+    void dfs(int v, list<int> vizinhos, vector<bool> &visitado); // busca em profundidade
+    
+    int gerarNumeroAleatorio(int min, int max);
+    bool existeAresta(int v1, int v2);
+    int retornaPesoDaAresta(int v1, int v2);
+    bool formaClique(const list<int> &verticesDaClique);
+    int calcularPesoClique(const list<int> &verticesDaClique);
+    list<int> encontrarCliquePesoMaximoRandomizadoAdaptativo(int numIteracoes, int tamanhoMaximo);
+    
+    int obterSomaDePesosDasArestasDeUmVerticeDaClique(const list<int> &verticesDaClique, int v);
+    list<int> encontrarCliquePesoMaximoRandomizadoAdaptativoReativo(int numIteracoes, int tamanhoMaximo);
+    
+};
+
+#endif
