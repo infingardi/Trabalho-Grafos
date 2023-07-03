@@ -147,6 +147,8 @@ void menuDeOpcoes(Grafo &grafo) {
                 for (int vertice : grafo.retornarCliqueDePesoMaximoGuloso()) {
                     cout << vertice << " ";
                 }
+
+                cout << endl << "O peso da clique encontrada foi: " << grafo.retornarPesoMaximoClique() << " ";
                 
                 break;
             case 8:
@@ -155,6 +157,8 @@ void menuDeOpcoes(Grafo &grafo) {
                 for (int vertice : grafo.encontrarCliquePesoMaximoRandomizadoAdaptativo(100, 1)) {
                     cout << vertice << " ";
                 }
+
+                cout << endl << "O peso da clique encontrada foi: " << grafo.retornarPesoMaximoClique() << " ";
                 
                 break;
             case 9:
@@ -163,6 +167,8 @@ void menuDeOpcoes(Grafo &grafo) {
                 for (int vertice : grafo.encontrarCliquePesoMaximoRandomizadoAdaptativoReativo(100, 1)) {
                     cout << vertice << " ";
                 }
+
+                cout << endl << "O peso da clique encontrada foi: " << grafo.retornarPesoMaximoClique() << " ";
                 
                 break;
             default:

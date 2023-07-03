@@ -25,6 +25,7 @@ struct Aresta {
 
 class Grafo {
     bool direcionado;
+    int pesoMaximoEncontradoPraClique;
     vector<Vertice> vertices;
     vector<list<Aresta>> adj;
 
@@ -33,6 +34,7 @@ public:
     void adicionarVertice(int valor);
     void adicionarAresta(int v1, int v2);
     void adicionarAresta(int v1, int v2, int peso);
+    int retornarPesoMaximoClique();
     
     list<int> retornarVizinhancaAberta(int v);                          // letra: H
     list<int> retornarVizinhancaFechada(int v);                         // letra: I

@@ -10,6 +10,10 @@ using namespace std;
 
 Grafo::Grafo(bool _direcionado) : direcionado(_direcionado) {}
 
+int Grafo::retornarPesoMaximoClique() {
+    return pesoMaximoEncontradoPraClique;
+}
+
 void Grafo::adicionarVertice(int valor) {
     Vertice vertice(valor);
     vertices.push_back(vertice);
@@ -200,7 +204,18 @@ list<int> Grafo::retornarCliqueDePesoMaximoGuloso() {
 
         for (int vizinho : retornarVizinhancaAberta(v)) {
             if (find(cliqueAtual.begin(), cliqueAtual.end(), vizinho) == cliqueAtual.end()) {
-                cliqueAtual.push_back(vizinho);
+                bool formaClique = true;
+
+                for (int v1 : cliqueAtual) {
+                    if (!existeAresta(vizinho, v1)) {
+                        formaClique = false;
+                        break;
+                    }
+                }
+
+                if(formaClique) {
+                    cliqueAtual.push_back(vizinho);
+                }
             }
         }
 
@@ -213,9 +228,11 @@ list<int> Grafo::retornarCliqueDePesoMaximoGuloso() {
             }
         }
 
+        pesoCliqueAtual = pesoCliqueAtual / 2; // Aresta tava sendo contada 2 vezes
         if (pesoCliqueAtual > pesoMaximo) {
             pesoMaximo = pesoCliqueAtual;
             cliquePesoMaximo = cliqueAtual;
+            pesoMaximoEncontradoPraClique = pesoMaximo;
         }
     }
 
@@ -275,6 +292,65 @@ int Grafo::calcularPesoClique(const list<int>& verticesDaClique) {
     return pesoTotal;
 }
 
+list<int> Grafo::encontrarCliquePesoMaximoRandomizadoAdaptativo(int numIteracoes, int tamanhoMaximo) {
+    int numVertices = adj.size();
+    list<int> melhorClique;
+    int melhorPeso = 0;
+
+    srand(time(nullptr));
+
+    for (int i = 0; i < numIteracoes; ++i) {
+        list<int> cliqueAtual;
+        int pesoAtual = 0;
+        vector<int> verticesDisponiveis(numVertices);
+        for (int j = 0; j < numVertices; ++j) {
+            verticesDisponiveis[j] = j;
+        }
+
+        random_shuffle(verticesDisponiveis.begin(), verticesDisponiveis.end());
+
+        for (int j = 0; j < tamanhoMaximo && j < numVertices; ++j) {
+            cliqueAtual.push_back(verticesDisponiveis[j]);
+        }
+
+        int iteracoesSemMelhora = 0;
+
+        while (iteracoesSemMelhora < 100) {
+            bool melhorou = false;
+
+            for (int j = 0; j < numVertices; ++j) {
+                if (find(cliqueAtual.begin(), cliqueAtual.end(), j) == cliqueAtual.end()) {
+                    list<int> novaClique = cliqueAtual;
+                    novaClique.push_back(j);
+
+                    if (formaClique(novaClique)) {
+                        int novoPeso = calcularPesoClique(novaClique) / 2;
+
+                        if (novoPeso > pesoAtual) {
+                            cliqueAtual = novaClique;
+                            pesoAtual = novoPeso;
+                            melhorou = true;
+                            iteracoesSemMelhora = 0;
+                        }
+                    }
+                }
+            }
+
+            if (!melhorou) {
+                ++iteracoesSemMelhora;
+            }
+        }
+
+        if (pesoAtual > melhorPeso) {
+            melhorClique = cliqueAtual;
+            melhorPeso = pesoAtual;
+            pesoMaximoEncontradoPraClique = melhorPeso;
+        }
+    }
+
+    return melhorClique;
+}
+
 
 // Encontrar clique de peso Maximo - Algoritmo guloso randomizado adaptativo e reativo
 int Grafo::obterSomaDePesosDasArestasDeUmVerticeDaClique(const list<int> &verticesDaClique, int v) {
@@ -304,7 +380,7 @@ list<int> Grafo::encontrarCliquePesoMaximoRandomizadoAdaptativoReativo(int numIt
 
         vector<int> verticesDisponiveis(vertices.size());
         for (int i = 0; i < vertices.size(); ++i) {
-            verticesDisponiveis[i] = i;
+            verticesDisponiveis[i] = i; // vertices disponiveis recebem todos os vertices
         }
 
         random_shuffle(verticesDisponiveis.begin(), verticesDisponiveis.end());
@@ -340,7 +416,7 @@ list<int> Grafo::encontrarCliquePesoMaximoRandomizadoAdaptativoReativo(int numIt
                     }
 
                     if (formaClique) {
-                        int novoPeso = pesoAtual + obterSomaDePesosDasArestasDeUmVerticeDaClique(cliqueAtual, verticeAtual); // considerando o peso das arestas
+                        int novoPeso = (pesoAtual + obterSomaDePesosDasArestasDeUmVerticeDaClique(cliqueAtual, verticeAtual)); // considerando o peso das arestas
                         if (novoPeso > pesoAtual) {
                             cliqueAtual.push_back(verticeAtual);
                             pesoAtual = novoPeso;
@@ -359,64 +435,7 @@ list<int> Grafo::encontrarCliquePesoMaximoRandomizadoAdaptativoReativo(int numIt
         if (pesoAtual > melhorPeso) {
             melhorClique = cliqueAtual;
             melhorPeso = pesoAtual;
-        }
-    }
-
-    return melhorClique;
-}
-
-list<int> Grafo::encontrarCliquePesoMaximoRandomizadoAdaptativo(int numIteracoes, int tamanhoMaximo) {
-    int numVertices = adj.size();
-    list<int> melhorClique;
-    int melhorPeso = 0;
-
-    srand(time(nullptr));
-
-    for (int i = 0; i < numIteracoes; ++i) {
-        list<int> cliqueAtual;
-        int pesoAtual = 0;
-        vector<int> verticesDisponiveis(numVertices);
-        for (int j = 0; j < numVertices; ++j) {
-            verticesDisponiveis[j] = j;
-        }
-
-        random_shuffle(verticesDisponiveis.begin(), verticesDisponiveis.end());
-
-        for (int j = 0; j < tamanhoMaximo && j < numVertices; ++j) {
-            cliqueAtual.push_back(verticesDisponiveis[j]);
-        }
-
-        int iteracoesSemMelhora = 0;
-
-        while (iteracoesSemMelhora < 100) {
-            bool melhorou = false;
-
-            for (int j = 0; j < numVertices; ++j) {
-                if (find(cliqueAtual.begin(), cliqueAtual.end(), j) == cliqueAtual.end()) {
-                    list<int> novaClique = cliqueAtual;
-                    novaClique.push_back(j);
-
-                    if (formaClique(novaClique)) {
-                        int novoPeso = calcularPesoClique(novaClique);
-
-                        if (novoPeso > pesoAtual) {
-                            cliqueAtual = novaClique;
-                            pesoAtual = novoPeso;
-                            melhorou = true;
-                            iteracoesSemMelhora = 0;
-                        }
-                    }
-                }
-            }
-
-            if (!melhorou) {
-                ++iteracoesSemMelhora;
-            }
-        }
-
-        if (pesoAtual > melhorPeso) {
-            melhorClique = cliqueAtual;
-            melhorPeso = pesoAtual;
+            pesoMaximoEncontradoPraClique = melhorPeso;
         }
     }
 
