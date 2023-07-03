@@ -39,10 +39,24 @@ public:
     bool verificarGrafoBipartido();                                     // letra: L
     list<int> retornarFechoTransitivoDireto(int v);                     // letra: O
     list<int> retornarFechoTransitivoIndireto(int v);                   // letra: P
-    list<int> retornarSubgrafoVerticeInduzido(list<int> vertices);      // letra: R
+    list<int> retornarSubgrafoVerticeInduzido(list<int> vertices);      // letra: R (Arrumar)
+
+
+    list<int> retornarCliqueDePesoMaximoGuloso();      // Algoritmo guloso
     
     void exibirGrafo();
-    void dfs(int v, list<int> vizinhos, vector<bool>& visitado); // busca em profundidade
+    void dfs(int v, list<int> vizinhos, vector<bool> &visitado); // busca em profundidade
+    
+    int gerarNumeroAleatorio(int min, int max);
+    bool existeAresta(int v1, int v2);
+    int retornaPesoDaAresta(int v1, int v2);
+    bool formaClique(const list<int> &verticesDaClique);
+    int calcularPesoClique(const list<int> &verticesDaClique);
+    list<int> encontrarCliquePesoMaximoRandomizadoAdaptativo(int numIteracoes, int tamanhoMaximo);
+    
+    int obterSomaDePesosDasArestasDeUmVerticeDaClique(const list<int> &verticesDaClique, int v);
+    list<int> encontrarCliquePesoMaximoRandomizadoAdaptativoReativo(int numIteracoes, int tamanhoMaximo);
+    
 };
 
 #endif

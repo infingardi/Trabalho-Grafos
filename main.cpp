@@ -73,6 +73,9 @@ void menuDeOpcoes(Grafo &grafo) {
         cout << "4) Mostrar o fecho transitivo direto de um nó" << endl;
         cout << "5) Mostrar o fecho transitivo indireto de um nó" << endl;
         cout << "6) Mostrar o subgrafo vertice induzido de um conjunto de nós" << endl;
+        cout << "7) Mostrar o conjunto de vértices formados pela clique de peso maximo (Guloso)" << endl;
+        cout << "8) Mostrar o conjunto de vértices formados pela clique de peso maximo (Guloso randomizado adaptativo)" << endl;
+        cout << "9) Mostrar o conjunto de vértices formados pela clique de peso maximo (Guloso randomizado adaptativo reativo)" << endl;
 
         cout << endl << "Opção: ";
 
@@ -134,6 +137,30 @@ void menuDeOpcoes(Grafo &grafo) {
                 
                 cout << "Subgrafo induzido: ";
                 for (int vertice : grafo.retornarSubgrafoVerticeInduzido(conjuntoDeVertices)) {
+                    cout << vertice << " ";
+                }
+                
+                break;
+
+            case 7:
+                cout << "A clique de peso maxima encontrado pelo algoritmo guloso foi: ";
+                for (int vertice : grafo.retornarCliqueDePesoMaximoGuloso()) {
+                    cout << vertice << " ";
+                }
+                
+                break;
+            case 8:
+                cout << "A clique de peso maxima encontrado pelo algoritmo guloso randomizado adaptativo foi: ";
+
+                for (int vertice : grafo.encontrarCliquePesoMaximoRandomizadoAdaptativo(100, 1)) {
+                    cout << vertice << " ";
+                }
+                
+                break;
+            case 9:
+                cout << "A clique de peso maxima encontrado pelo algoritmo guloso randomizado adaptativo foi: ";
+
+                for (int vertice : grafo.encontrarCliquePesoMaximoRandomizadoAdaptativoReativo(100, 1)) {
                     cout << vertice << " ";
                 }
                 

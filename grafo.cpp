@@ -189,6 +189,244 @@ list<int> Grafo::retornarSubgrafoVerticeInduzido(list<int> vertices) {
     return subgrafo;
 }
 
+// Encontrar clique de peso Maximo - Algoritmo guloso
+list<int> Grafo::retornarCliqueDePesoMaximoGuloso() {
+    list<int> cliquePesoMaximo;
+    int pesoMaximo = 0;
+
+    for (int v = 1; v < vertices.size(); ++v) {
+        list<int> cliqueAtual;
+        cliqueAtual.push_back(v);
+
+        for (int vizinho : retornarVizinhancaAberta(v)) {
+            if (find(cliqueAtual.begin(), cliqueAtual.end(), vizinho) == cliqueAtual.end()) {
+                cliqueAtual.push_back(vizinho);
+            }
+        }
+
+        int pesoCliqueAtual = 0;
+        for (int v1 : cliqueAtual) {
+            for (Aresta aresta : adj[v1]) {
+                if (find(cliqueAtual.begin(), cliqueAtual.end(), aresta.destino) != cliqueAtual.end()) {
+                    pesoCliqueAtual += aresta.peso;
+                }
+            }
+        }
+
+        if (pesoCliqueAtual > pesoMaximo) {
+            pesoMaximo = pesoCliqueAtual;
+            cliquePesoMaximo = cliqueAtual;
+        }
+    }
+
+    return cliquePesoMaximo;
+}
+
+// Encontrar clique de peso Maximo - Algoritmo guloso randomizado adaptativo
+
+int Grafo::gerarNumeroAleatorio(int min, int max) {
+    return min + rand() % (max - min + 1);
+}
+
+bool Grafo::existeAresta(int v1, int v2) {
+
+    list<Aresta>::iterator it;
+    for (it = adj[v1].begin(); it != adj[v1].end(); ++it) {
+        if(it->destino == v2) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+int Grafo::retornaPesoDaAresta(int v1, int v2) {
+
+    list<Aresta>::iterator it;
+    for (it = adj[v1].begin(); it != adj[v1].end(); ++it) {
+        if(it->destino == v2) {
+            return it->peso;
+        }
+    }
+
+    return -1;
+}
+
+bool Grafo::formaClique(const list<int>& verticesDaClique) {
+    for (int v1 : verticesDaClique) {
+        for (int v2 : verticesDaClique) {
+            if (v1 != v2 && !existeAresta(v1, v2)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+int Grafo::calcularPesoClique(const list<int>& verticesDaClique) {
+    int pesoTotal = 0;
+    for (int v1 : verticesDaClique) {
+        for (int v2 : verticesDaClique) {
+            if (v1 != v2 && existeAresta(v1, v2)) {
+                pesoTotal += retornaPesoDaAresta(v1, v2);
+            }
+        }
+    }
+    return pesoTotal;
+}
+
+
+// Encontrar clique de peso Maximo - Algoritmo guloso randomizado adaptativo e reativo
+int Grafo::obterSomaDePesosDasArestasDeUmVerticeDaClique(const list<int> &verticesDaClique, int v) {
+    int pesoTotal = 0;
+
+    for(int vertice : verticesDaClique) {
+        if(vertice != v) {
+            pesoTotal += retornaPesoDaAresta(vertice, v);
+        }
+    }
+
+    return pesoTotal;
+}
+
+
+list<int> Grafo::encontrarCliquePesoMaximoRandomizadoAdaptativoReativo(int numIteracoes, int tamanhoMaximo) {
+    list<int> melhorClique;
+    int melhorPeso = 0;
+
+    srand(time(nullptr));
+
+    vector<double> probabilidades(vertices.size(), 1.0);
+
+    for (int iteracao = 0; iteracao < numIteracoes; ++iteracao) {
+        list<int> cliqueAtual;
+        int pesoAtual = 0;
+
+        vector<int> verticesDisponiveis(vertices.size());
+        for (int i = 0; i < vertices.size(); ++i) {
+            verticesDisponiveis[i] = i;
+        }
+
+        random_shuffle(verticesDisponiveis.begin(), verticesDisponiveis.end());
+
+        // Selecionar os primeiros 'tamanhoMaximo' vértices como a clique inicial
+        for (int i = 0; i < tamanhoMaximo; ++i) {
+            cliqueAtual.push_back(verticesDisponiveis[i]);
+            pesoAtual += obterSomaDePesosDasArestasDeUmVerticeDaClique(cliqueAtual, verticesDisponiveis[i]); // considerando o peso das arestas
+        }
+
+        int iteracoesSemMelhora = 0;
+        bool melhorou = false;
+
+        while (iteracoesSemMelhora < 100) { // Número máximo de iterações sem melhora
+            melhorou = false;
+
+            for (int i = tamanhoMaximo; i < vertices.size(); ++i) {
+                if (cliqueAtual.size() >= vertices.size()) {
+                    break; // Já formou a clique máxima possível
+                }
+
+                int verticeAtual = verticesDisponiveis[i];
+                double probabilidade = rand() / (double)RAND_MAX;
+
+                if (probabilidade < probabilidades[verticeAtual]) {
+                    // Verificar se a inclusão do vértice atual forma uma clique válida
+                    bool formaClique = true;
+                    for (int v : cliqueAtual) {
+                        if (!existeAresta(verticeAtual, v)) {
+                            formaClique = false;
+                            break;
+                        }
+                    }
+
+                    if (formaClique) {
+                        int novoPeso = pesoAtual + obterSomaDePesosDasArestasDeUmVerticeDaClique(cliqueAtual, verticeAtual); // considerando o peso das arestas
+                        if (novoPeso > pesoAtual) {
+                            cliqueAtual.push_back(verticeAtual);
+                            pesoAtual = novoPeso;
+                            melhorou = true;
+                            iteracoesSemMelhora = 0;
+                        }
+                    }
+                }
+            }
+
+            if (!melhorou) {
+                iteracoesSemMelhora++;
+            }
+        }
+
+        if (pesoAtual > melhorPeso) {
+            melhorClique = cliqueAtual;
+            melhorPeso = pesoAtual;
+        }
+    }
+
+    return melhorClique;
+}
+
+list<int> Grafo::encontrarCliquePesoMaximoRandomizadoAdaptativo(int numIteracoes, int tamanhoMaximo) {
+    int numVertices = adj.size();
+    list<int> melhorClique;
+    int melhorPeso = 0;
+
+    srand(time(nullptr));
+
+    for (int i = 0; i < numIteracoes; ++i) {
+        list<int> cliqueAtual;
+        int pesoAtual = 0;
+        vector<int> verticesDisponiveis(numVertices);
+        for (int j = 0; j < numVertices; ++j) {
+            verticesDisponiveis[j] = j;
+        }
+
+        random_shuffle(verticesDisponiveis.begin(), verticesDisponiveis.end());
+
+        for (int j = 0; j < tamanhoMaximo && j < numVertices; ++j) {
+            cliqueAtual.push_back(verticesDisponiveis[j]);
+        }
+
+        int iteracoesSemMelhora = 0;
+
+        while (iteracoesSemMelhora < 100) {
+            bool melhorou = false;
+
+            for (int j = 0; j < numVertices; ++j) {
+                if (find(cliqueAtual.begin(), cliqueAtual.end(), j) == cliqueAtual.end()) {
+                    list<int> novaClique = cliqueAtual;
+                    novaClique.push_back(j);
+
+                    if (formaClique(novaClique)) {
+                        int novoPeso = calcularPesoClique(novaClique);
+
+                        if (novoPeso > pesoAtual) {
+                            cliqueAtual = novaClique;
+                            pesoAtual = novoPeso;
+                            melhorou = true;
+                            iteracoesSemMelhora = 0;
+                        }
+                    }
+                }
+            }
+
+            if (!melhorou) {
+                ++iteracoesSemMelhora;
+            }
+        }
+
+        if (pesoAtual > melhorPeso) {
+            melhorClique = cliqueAtual;
+            melhorPeso = pesoAtual;
+        }
+    }
+
+    return melhorClique;
+}
+
+
+// ================================= Fim randomizado guloso Adaptivo randomizado ==================================
+
+
 void Grafo::exibirGrafo() {
     for (int i = 1; i < vertices.size(); ++i) {
         cout << "Vértice " << i << " (valor: " << vertices[i].valor << "): ";
