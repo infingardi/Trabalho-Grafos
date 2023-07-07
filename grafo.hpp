@@ -5,6 +5,7 @@
 #include <list>
 #include <vector>
 #include <utility>
+#include <climits>
 
 using namespace std;
 
@@ -23,11 +24,21 @@ struct Aresta {
     Aresta(int _destino, int _peso) : destino(_destino), peso(_peso) {} // Caso com aresta ponderada
 };
 
+struct ArestaAGM {
+    int origem;
+    int destino;
+    int peso;
+
+    ArestaAGM(int _origem, int _destino, int _peso) : origem(_origem), destino(_destino), peso(_peso) {}
+};
+
 class Grafo {
     bool direcionado;
     int pesoMaximoEncontradoPraClique;
     vector<Vertice> vertices;
     vector<list<Aresta>> adj;
+    int numVertices;
+    int passoVetCaminhos;
 
 public:
     Grafo(bool _direcionado);
@@ -42,6 +53,12 @@ public:
     list<int> retornarFechoTransitivoDireto(int v);                     // letra: O
     list<int> retornarFechoTransitivoIndireto(int v);                   // letra: P
     list<int> retornarSubgrafoVerticeInduzido(list<int> vertices);      // letra: R (Arrumar)
+    void apresentaArestasPonte();                                       // letra: W
+    void apresentarRaioDiametroCentroPeriferia();                       // letra: X
+    void apresentaAGMouFlorestasDeCustoMinimo();                        // letra: Y
+
+    // letra Z
+    void DijkstraCaminhoMinimo(int origem, int destino, const vector<int>& vetDistancias, const vector<int>& vetCaminhos);
 
 
     list<int> retornarCliqueDePesoMaximoGuloso();      // Algoritmo guloso
@@ -58,6 +75,9 @@ public:
     
     int obterSomaDePesosDasArestasDeUmVerticeDaClique(const list<int> &verticesDaClique, int v);
     list<int> encontrarCliquePesoMaximoRandomizadoAdaptativoReativo(int numIteracoes, int tamanhoMaximo);
+
+    void BuscaEmProfundidadeAP(int v, int pai, vector<bool>& visitado, vector<int>& ordemVisitados, vector<int>& valoresBaixos);    // Função de busca em profundidade adaptada para buscar arestas ponte
+    
     
 };
 
